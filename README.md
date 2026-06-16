@@ -79,7 +79,3 @@ Set `VITE_API_URL` in `.env` when backend is ready.
 npm run build
 npm run preview
 ```
-
-## License
-
-MIT
