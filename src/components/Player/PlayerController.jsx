@@ -1,6 +1,7 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+import { easing } from 'maath'
 import { PLAYER, PORTAL } from '../../utils/constants'
 import { CITY_DATA } from '../../utils/cityGenerator'
 import {
@@ -28,12 +29,18 @@ export default function PlayerController() {
   const pitchRef = useRef(0.3)
   const footstepTimer = useRef(0)
   const lastArea = useRef('')
+  
+  // Create a separate position vector for camera targeting to decouple from character
+  const cameraTarget = useMemo(() => new THREE.Vector3(), [])
 
   const { camera } = useThree()
+  
+  // We only subscribe to screen
   const screen = useGameStore((s) => s.screen)
   const startLevelLoading = useGameStore((s) => s.startLevelLoading)
   const pauseGame = useGameStore((s) => s.pauseGame)
 
+  // Actions
   const setPosition = usePlayerStore((s) => s.setPosition)
   const setVelocity = usePlayerStore((s) => s.setVelocity)
   const setGrounded = usePlayerStore((s) => s.setGrounded)
@@ -45,7 +52,6 @@ export default function PlayerController() {
   const setFps = usePlayerStore((s) => s.setFps)
   const visitArea = usePlayerStore((s) => s.visitArea)
   const discoverPortal = usePlayerStore((s) => s.discoverPortal)
-  const position = usePlayerStore((s) => s.position)
 
   const enabled = screen === 'playing'
   const { keysRef, consumeInteract, consumePause } = useKeyboard(enabled)
@@ -59,12 +65,13 @@ export default function PlayerController() {
   useFPS(setFps)
 
   useEffect(() => {
+    const state = usePlayerStore.getState()
     if (groupRef.current) {
-      groupRef.current.position.set(position.x, position.y, position.z)
+      groupRef.current.position.set(state.position.x, state.position.y, state.position.z)
     }
   }, [])
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (!enabled || !groupRef.current) return
 
     if (consumePause()) {
@@ -77,7 +84,6 @@ export default function PlayerController() {
     const vel = velocityRef.current
     const pos = groupRef.current.position
 
-    // Camera-relative movement vectors
     const forward = new THREE.Vector3(Math.sin(yawRef.current), 0, Math.cos(yawRef.current))
     const right = new THREE.Vector3(Math.cos(yawRef.current), 0, -Math.sin(yawRef.current))
 
@@ -87,23 +93,22 @@ export default function PlayerController() {
     const isRunning = keys.run && isMoving
     const targetSpeed = isRunning ? PLAYER.RUN_SPEED : PLAYER.WALK_SPEED
 
-    // Acceleration / deceleration
     if (isMoving) {
+      // Improved acceleration curve
       vel.x = lerp(vel.x, moveDir.x * targetSpeed, PLAYER.ACCELERATION * dt)
       vel.z = lerp(vel.z, moveDir.z * targetSpeed, PLAYER.ACCELERATION * dt)
     } else {
-      vel.x = lerp(vel.x, 0, PLAYER.DECELERATION * dt)
-      vel.z = lerp(vel.z, 0, PLAYER.DECELERATION * dt)
+      // Improved deceleration curve
+      vel.x = lerp(vel.x, 0, PLAYER.DECELERATION * dt * 1.5)
+      vel.z = lerp(vel.z, 0, PLAYER.DECELERATION * dt * 1.5)
     }
 
-    // Jump
     let grounded = pos.y <= PLAYER.SPAWN.y + 0.01
     if (keys.jump && grounded) {
       vel.y = PLAYER.JUMP_FORCE
       grounded = false
     }
 
-    // Gravity
     if (!grounded) {
       vel.y -= PLAYER.GRAVITY * dt
     } else if (vel.y < 0) {
@@ -111,65 +116,68 @@ export default function PlayerController() {
       pos.y = PLAYER.SPAWN.y
     }
 
-    // Apply movement
     let newX = pos.x + vel.x * dt
     let newZ = pos.z + vel.z * dt
     let newY = pos.y + vel.y * dt
 
-    // Building collision
     for (const building of buildings) {
       if (checkBuildingCollision(newX, newZ, PLAYER.RADIUS, building)) {
         const resolved = resolveBuildingCollision(newX, newZ, PLAYER.RADIUS, building)
         newX = resolved.x
         newZ = resolved.z
-        vel.x *= 0.3
-        vel.z *= 0.3
+        vel.x *= 0.1
+        vel.z *= 0.1
       }
     }
 
-    // Map bounds
     const bounded = clampToMapBounds(newX, newZ)
     newX = bounded.x
     newZ = bounded.z
 
     pos.set(newX, Math.max(PLAYER.SPAWN.y, newY), newZ)
 
-    // Character rotation toward movement
     if (isMoving) {
       const targetAngle = Math.atan2(moveDir.x, moveDir.z)
-      groupRef.current.rotation.y = lerp(groupRef.current.rotation.y, targetAngle, 10 * dt)
+      easing.dampE(groupRef.current.rotation, [0, targetAngle, 0], 0.1, dt)
     }
 
-    // Camera follow
+    // AAA Third Person Camera
     const camDist = PLAYER.CAMERA_DISTANCE
     const camHeight = PLAYER.CAMERA_HEIGHT
-    const camX = pos.x - Math.sin(yawRef.current) * Math.cos(pitchRef.current) * camDist
-    const camY = pos.y + camHeight + Math.sin(pitchRef.current) * camDist * 0.5
-    const camZ = pos.z - Math.cos(yawRef.current) * Math.cos(pitchRef.current) * camDist
+    
+    // Desired camera position
+    const idealCamX = pos.x - Math.sin(yawRef.current) * Math.cos(pitchRef.current) * camDist
+    const idealCamY = pos.y + camHeight + Math.sin(pitchRef.current) * camDist * 0.5
+    const idealCamZ = pos.z - Math.cos(yawRef.current) * Math.cos(pitchRef.current) * camDist
+    
+    // Smooth camera target
+    cameraTarget.lerp(new THREE.Vector3(pos.x, pos.y + 1, pos.z), 12 * dt)
 
-    camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 8 * dt)
-    camera.lookAt(pos.x, pos.y + 1, pos.z)
+    easing.damp3(camera.position, [idealCamX, idealCamY, idealCamZ], 0.15, dt)
+    camera.lookAt(cameraTarget)
 
-    // Animation state
-    if (!grounded) setAnimationState('jump')
-    else if (isRunning) setAnimationState('run')
-    else if (isMoving) setAnimationState('walk')
-    else setAnimationState('idle')
+    const pState = usePlayerStore.getState()
+    let newAnimState = 'idle'
+    if (!grounded) newAnimState = 'jump'
+    else if (isRunning) newAnimState = 'run'
+    else if (isMoving) newAnimState = 'walk'
 
-    setRunning(isRunning)
-    setGrounded(grounded)
+    if (pState.animationState !== newAnimState) setAnimationState(newAnimState)
+    if (pState.isRunning !== isRunning) setRunning(isRunning)
+    if (pState.isGrounded !== grounded) setGrounded(grounded)
+    
+    // Optimization: only update position occasionally or via ref directly if possible
+    // But since minimap reads it, we still dispatch
     setVelocity({ ...vel })
     setPosition({ x: pos.x, y: pos.y, z: pos.z })
 
-    // Area detection
     const area = getAreaAtPosition(pos.x, pos.z)
-    setCurrentArea(area.name)
+    if (pState.currentArea !== area.name) setCurrentArea(area.name)
     if (area.id !== lastArea.current) {
       lastArea.current = area.id
       if (area.id !== 'outskirts') visitArea(area.id)
     }
 
-    // Portal detection
     let nearestPortal = null
     let nearestDist = Infinity
     for (const portal of PORTAL_POSITIONS) {
@@ -180,7 +188,7 @@ export default function PlayerController() {
       }
     }
 
-    setNearbyPortal(nearestPortal)
+    if (pState.nearbyPortal?.level !== nearestPortal?.level) setNearbyPortal(nearestPortal)
 
     if (nearestPortal) {
       if (discoverPortal(nearestPortal.level)) {
@@ -191,7 +199,6 @@ export default function PlayerController() {
       }
     }
 
-    // Footstep timer placeholder (audio handled in HUD)
     if (isMoving && grounded) {
       footstepTimer.current += dt * 1000
     } else {
@@ -200,7 +207,7 @@ export default function PlayerController() {
   })
 
   return (
-    <group ref={groupRef} position={[position.x, position.y, position.z]}>
+    <group ref={groupRef}>
       <Character />
     </group>
   )

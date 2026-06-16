@@ -9,6 +9,8 @@ export default function Character() {
   const rightLegRef = useRef()
   const leftArmRef = useRef()
   const rightArmRef = useRef()
+  
+  // Get animation state dynamically
   const animationState = usePlayerStore((s) => s.animationState)
   const time = useRef(0)
 
@@ -33,45 +35,60 @@ export default function Character() {
   const bodyColor = '#3b82f6'
   const skinColor = '#fcd9b6'
   const pantsColor = '#1e293b'
+  const backpackColor = '#64748b'
 
   return (
     <group ref={groupRef}>
       {/* Body */}
-      <mesh castShadow position={[0, 0.9, 0]}>
+      <mesh castShadow receiveShadow position={[0, 0.9, 0]}>
         <boxGeometry args={[0.5, 0.7, 0.3]} />
-        <meshStandardMaterial color={bodyColor} />
+        <meshStandardMaterial color={bodyColor} roughness={0.5} metalness={0.2} />
       </mesh>
+      
+      {/* Backpack */}
+      <mesh castShadow receiveShadow position={[0, 1.0, -0.2]}>
+        <boxGeometry args={[0.4, 0.5, 0.15]} />
+        <meshStandardMaterial color={backpackColor} roughness={0.8} />
+      </mesh>
+
       {/* Head */}
-      <mesh castShadow position={[0, 1.45, 0]}>
-        <sphereGeometry args={[0.22, 8, 8]} />
-        <meshStandardMaterial color={skinColor} />
+      <mesh castShadow receiveShadow position={[0, 1.45, 0]}>
+        <sphereGeometry args={[0.22, 16, 16]} />
+        <meshStandardMaterial color={skinColor} roughness={0.4} />
       </mesh>
+      
+      {/* Visor/Glasses */}
+      <mesh castShadow position={[0, 1.48, 0.18]}>
+        <boxGeometry args={[0.3, 0.1, 0.1]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.1} metalness={0.8} />
+      </mesh>
+
       {/* Left Leg */}
       <group ref={leftLegRef} position={[-0.12, 0.35, 0]}>
-        <mesh castShadow position={[0, -0.25, 0]}>
+        <mesh castShadow receiveShadow position={[0, -0.25, 0]}>
           <boxGeometry args={[0.18, 0.5, 0.18]} />
-          <meshStandardMaterial color={pantsColor} />
+          <meshStandardMaterial color={pantsColor} roughness={0.9} />
         </mesh>
       </group>
       {/* Right Leg */}
       <group ref={rightLegRef} position={[0.12, 0.35, 0]}>
-        <mesh castShadow position={[0, -0.25, 0]}>
+        <mesh castShadow receiveShadow position={[0, -0.25, 0]}>
           <boxGeometry args={[0.18, 0.5, 0.18]} />
-          <meshStandardMaterial color={pantsColor} />
+          <meshStandardMaterial color={pantsColor} roughness={0.9} />
         </mesh>
       </group>
       {/* Left Arm */}
       <group ref={leftArmRef} position={[-0.35, 1.0, 0]}>
-        <mesh castShadow position={[0, -0.2, 0]}>
+        <mesh castShadow receiveShadow position={[0, -0.2, 0]}>
           <boxGeometry args={[0.14, 0.4, 0.14]} />
-          <meshStandardMaterial color={bodyColor} />
+          <meshStandardMaterial color={bodyColor} roughness={0.6} />
         </mesh>
       </group>
       {/* Right Arm */}
       <group ref={rightArmRef} position={[0.35, 1.0, 0]}>
-        <mesh castShadow position={[0, -0.2, 0]}>
+        <mesh castShadow receiveShadow position={[0, -0.2, 0]}>
           <boxGeometry args={[0.14, 0.4, 0.14]} />
-          <meshStandardMaterial color={bodyColor} />
+          <meshStandardMaterial color={bodyColor} roughness={0.6} />
         </mesh>
       </group>
     </group>

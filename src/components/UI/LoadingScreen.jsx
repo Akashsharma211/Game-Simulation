@@ -1,9 +1,13 @@
 import { motion } from 'framer-motion'
+import { useProgress } from '@react-three/drei'
 import { useGameStore } from '../../store/gameStore'
 
 export default function LoadingScreen({ message }) {
   const loadingLevel = useGameStore((s) => s.loadingLevel)
+  const { progress, active } = useProgress()
+  
   const displayMessage = message || (loadingLevel ? `Loading Level ${loadingLevel}...` : 'Loading City...')
+  const currentProgress = active ? progress : 100
 
   return (
     <motion.div
@@ -29,8 +33,8 @@ export default function LoadingScreen({ message }) {
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
         />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl">🎮</span>
+        <div className="absolute inset-0 flex items-center justify-center text-cyan-400 font-bold">
+          {Math.round(currentProgress)}%
         </div>
       </div>
 
@@ -46,12 +50,12 @@ export default function LoadingScreen({ message }) {
         <motion.div
           className="h-full bg-gradient-to-r from-cyan-500 to-purple-600"
           initial={{ width: '0%' }}
-          animate={{ width: '100%' }}
-          transition={{ duration: 2, ease: 'easeInOut' }}
+          animate={{ width: `${currentProgress}%` }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         />
       </div>
 
-      <p className="text-gray-500 text-sm mt-4">Please wait...</p>
+      <p className="text-gray-500 text-sm mt-4">Preparing high quality assets...</p>
     </motion.div>
   )
 }

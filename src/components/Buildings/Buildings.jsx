@@ -1,50 +1,129 @@
-import { memo } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
+import * as THREE from 'three'
 import { CITY_DATA } from '../../utils/cityGenerator'
 
-const Building = memo(({ building }) => {
-  const { x, z, width, depth, height, color, type, isBoundary } = building
-
-  if (isBoundary) {
-    return (
-      <mesh position={[x, height / 2, z]} visible={false}>
-        <boxGeometry args={[width, height, depth]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
-    )
-  }
-
-  return (
-    <group position={[x, 0, z]}>
-      <mesh castShadow receiveShadow position={[0, height / 2, 0]}>
-        <boxGeometry args={[width, height, depth]} />
-        <meshStandardMaterial color={color} roughness={0.7} metalness={type === 'skyscraper' ? 0.4 : 0.1} />
-      </mesh>
-      {/* Roof accent for skyscrapers */}
-      {type === 'skyscraper' && (
-        <mesh castShadow position={[0, height + 0.5, 0]}>
-          <boxGeometry args={[width * 0.6, 1, depth * 0.6]} />
-          <meshStandardMaterial color="#1e293b" metalness={0.6} />
-        </mesh>
-      )}
-      {/* Windows */}
-      {height > 5 && (
-        <mesh position={[0, height * 0.6, depth / 2 + 0.01]}>
-          <planeGeometry args={[width * 0.8, height * 0.5]} />
-          <meshStandardMaterial color="#1e3a5f" emissive="#334155" emissiveIntensity={0.3} transparent opacity={0.7} />
-        </mesh>
-      )}
-    </group>
-  )
-})
-
-Building.displayName = 'Building'
+const { buildings } = CITY_DATA
 
 export default function Buildings() {
+  const meshRef = useRef()
+  const roofRef = useRef()
+  const windowRef = useRef()
+  const boundaryRef = useRef()
+
+  const { buildingData, roofData, windowData, boundaryData } = useMemo(() => {
+    const bData = []
+    const rData = []
+    const wData = []
+    const boundData = []
+
+    buildings.forEach((b) => {
+      const { x, z, width, depth, height, color, type, isBoundary } = b
+
+      if (isBoundary) {
+        boundData.push({ x, y: height / 2, z, width, height, depth })
+        return
+      }
+
+      bData.push({ x, y: height / 2, z, width, height, depth, color, type })
+
+      if (type === 'skyscraper') {
+        rData.push({ x, y: height + 0.5, z, width: width * 0.6, height: 1, depth: depth * 0.6 })
+      }
+
+      if (height > 5) {
+        wData.push({ x, y: height * 0.6, z: z + depth / 2 + 0.01, width: width * 0.8, height: height * 0.5 })
+      }
+    })
+
+    return { buildingData: bData, roofData: rData, windowData: wData, boundaryData: boundData }
+  }, [])
+
+  useEffect(() => {
+    const dummy = new THREE.Object3D()
+    const colorObj = new THREE.Color()
+
+    // Main buildings
+    if (meshRef.current) {
+      buildingData.forEach((b, i) => {
+        dummy.position.set(b.x, b.y, b.z)
+        dummy.scale.set(b.width, b.height, b.depth)
+        dummy.updateMatrix()
+        meshRef.current.setMatrixAt(i, dummy.matrix)
+        
+        colorObj.set(b.color)
+        meshRef.current.setColorAt(i, colorObj)
+      })
+      meshRef.current.instanceMatrix.needsUpdate = true
+      if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true
+    }
+
+    // Roofs
+    if (roofRef.current) {
+      roofData.forEach((b, i) => {
+        dummy.position.set(b.x, b.y, b.z)
+        dummy.scale.set(b.width, b.height, b.depth)
+        dummy.updateMatrix()
+        roofRef.current.setMatrixAt(i, dummy.matrix)
+      })
+      roofRef.current.instanceMatrix.needsUpdate = true
+    }
+
+    // Windows
+    if (windowRef.current) {
+      windowData.forEach((b, i) => {
+        dummy.position.set(b.x, b.y, b.z)
+        dummy.scale.set(b.width, b.height, 1)
+        dummy.updateMatrix()
+        windowRef.current.setMatrixAt(i, dummy.matrix)
+      })
+      windowRef.current.instanceMatrix.needsUpdate = true
+    }
+
+    // Boundaries
+    if (boundaryRef.current) {
+      boundaryData.forEach((b, i) => {
+        dummy.position.set(b.x, b.y, b.z)
+        dummy.scale.set(b.width, b.height, b.depth)
+        dummy.updateMatrix()
+        boundaryRef.current.setMatrixAt(i, dummy.matrix)
+      })
+      boundaryRef.current.instanceMatrix.needsUpdate = true
+    }
+  }, [buildingData, roofData, windowData, boundaryData])
+
   return (
     <group name="buildings">
-      {CITY_DATA.buildings.map((b) => (
-        <Building key={b.id} building={b} />
-      ))}
+      {/* Boundaries */}
+      {boundaryData.length > 0 && (
+        <instancedMesh ref={boundaryRef} args={[null, null, boundaryData.length]} visible={false}>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </instancedMesh>
+      )}
+
+      {/* Buildings */}
+      {buildingData.length > 0 && (
+        <instancedMesh ref={meshRef} args={[null, null, buildingData.length]} castShadow receiveShadow frustumCulled>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial roughness={0.7} metalness={0.2} />
+        </instancedMesh>
+      )}
+
+      {/* Roofs */}
+      {roofData.length > 0 && (
+        <instancedMesh ref={roofRef} args={[null, null, roofData.length]} castShadow receiveShadow frustumCulled>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.6} />
+        </instancedMesh>
+      )}
+
+      {/* Windows */}
+      {windowData.length > 0 && (
+        <instancedMesh ref={windowRef} args={[null, null, windowData.length]} frustumCulled>
+          <planeGeometry args={[1, 1]} />
+          <meshStandardMaterial color="#1e3a5f" emissive="#334155" emissiveIntensity={0.3} transparent opacity={0.7} />
+        </instancedMesh>
+      )}
     </group>
   )
 }
