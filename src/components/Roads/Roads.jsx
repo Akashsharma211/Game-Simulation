@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { ROAD_DATA } from '../../utils/cityGenerator'
 import { COLORS } from '../../utils/constants'
+import { Textures } from '../../utils/TextureGenerator'
 
 const RoadSegment = memo(({ road }) => {
   const { x, z, width, depth, horizontal } = road
@@ -8,7 +9,7 @@ const RoadSegment = memo(({ road }) => {
     <group position={[x, 0.02, z]}>
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[horizontal ? width : depth, horizontal ? depth : width]} />
-        <meshStandardMaterial color={COLORS.ROAD} roughness={0.9} />
+        <meshStandardMaterial map={Textures.asphalt} roughness={0.9} />
       </mesh>
       {/* Center line */}
       <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>

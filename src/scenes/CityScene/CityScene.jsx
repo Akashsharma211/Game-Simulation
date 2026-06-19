@@ -22,6 +22,7 @@ export default function CityScene() {
       gl={{ antialias: true, powerPreference: 'high-performance', toneMappingExposure: 1.2 }}
       style={{ width: '100%', height: '100%' }}
     >
+      <fog attach="fog" args={['#0f172a', 10, 150]} />
       <Suspense fallback={null}>
         {/* Soft shadows for AAA feel */}
         {shadowQuality === 'high' || shadowQuality === 'ultra' ? (
@@ -44,18 +45,18 @@ export default function CityScene() {
 
         {/* Post Processing Pipeline */}
         <EffectComposer disableNormalPass>
-          <N8AO aoRadius={2} intensity={1} luminanceInfluence={0.6} />
+          <N8AO aoRadius={3} intensity={1.5} luminanceInfluence={0.5} />
           
           {bloomEnabled && (
             <Bloom 
-              luminanceThreshold={1.2} 
+              luminanceThreshold={1.0} 
               mipmapBlur 
-              intensity={0.8} 
+              intensity={1.2} 
               levels={8} 
             />
           )}
           
-          <Vignette eskil={false} offset={0.1} darkness={0.8} />
+          <Vignette eskil={false} offset={0.15} darkness={0.9} />
           <ToneMapping adaptive={true} resolution={256} middleGrey={0.6} maxLuminance={16.0} averageLuminance={1.0} adaptationRate={1.0} />
         </EffectComposer>
       </Suspense>

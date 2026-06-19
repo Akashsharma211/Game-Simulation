@@ -1,6 +1,7 @@
 import { useMemo, useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import { CITY_DATA } from '../../utils/cityGenerator'
+import { Textures } from '../../utils/TextureGenerator'
 
 const { buildings } = CITY_DATA
 
@@ -105,7 +106,7 @@ export default function Buildings() {
       {buildingData.length > 0 && (
         <instancedMesh ref={meshRef} args={[null, null, buildingData.length]} castShadow receiveShadow frustumCulled>
           <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial roughness={0.7} metalness={0.2} />
+          <meshStandardMaterial map={Textures.concrete} roughness={0.8} metalness={0.1} />
         </instancedMesh>
       )}
 
@@ -121,7 +122,7 @@ export default function Buildings() {
       {windowData.length > 0 && (
         <instancedMesh ref={windowRef} args={[null, null, windowData.length]} frustumCulled>
           <planeGeometry args={[1, 1]} />
-          <meshStandardMaterial color="#1e3a5f" emissive="#334155" emissiveIntensity={0.3} transparent opacity={0.7} />
+          <meshStandardMaterial map={Textures.windowEmissive} emissiveMap={Textures.windowEmissive} emissive="#ffffff" emissiveIntensity={1.5} transparent opacity={0.9} />
         </instancedMesh>
       )}
     </group>

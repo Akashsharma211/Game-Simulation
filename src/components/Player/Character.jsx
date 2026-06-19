@@ -42,53 +42,53 @@ export default function Character() {
       {/* Body */}
       <mesh castShadow receiveShadow position={[0, 0.9, 0]}>
         <boxGeometry args={[0.5, 0.7, 0.3]} />
-        <meshStandardMaterial color={bodyColor} roughness={0.5} metalness={0.2} />
+        <meshPhysicalMaterial color={bodyColor} roughness={0.7} clearcoat={0.1} />
       </mesh>
       
       {/* Backpack */}
       <mesh castShadow receiveShadow position={[0, 1.0, -0.2]}>
         <boxGeometry args={[0.4, 0.5, 0.15]} />
-        <meshStandardMaterial color={backpackColor} roughness={0.8} />
+        <meshPhysicalMaterial color={backpackColor} roughness={0.9} clearcoat={0.05} />
       </mesh>
 
       {/* Head */}
       <mesh castShadow receiveShadow position={[0, 1.45, 0]}>
-        <sphereGeometry args={[0.22, 16, 16]} />
-        <meshStandardMaterial color={skinColor} roughness={0.4} />
+        <sphereGeometry args={[0.22, 32, 32]} />
+        <meshPhysicalMaterial color={skinColor} roughness={0.5} clearcoat={0.1} />
       </mesh>
       
       {/* Visor/Glasses */}
       <mesh castShadow position={[0, 1.48, 0.18]}>
-        <boxGeometry args={[0.3, 0.1, 0.1]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.1} metalness={0.8} />
+        <boxGeometry args={[0.3, 0.1, 0.12]} />
+        <meshPhysicalMaterial color="#0f172a" roughness={0.1} metalness={0.9} transmission={0.5} thickness={0.5} />
       </mesh>
 
       {/* Left Leg */}
       <group ref={leftLegRef} position={[-0.12, 0.35, 0]}>
         <mesh castShadow receiveShadow position={[0, -0.25, 0]}>
           <boxGeometry args={[0.18, 0.5, 0.18]} />
-          <meshStandardMaterial color={pantsColor} roughness={0.9} />
+          <meshPhysicalMaterial color={pantsColor} roughness={0.8} />
         </mesh>
       </group>
       {/* Right Leg */}
       <group ref={rightLegRef} position={[0.12, 0.35, 0]}>
         <mesh castShadow receiveShadow position={[0, -0.25, 0]}>
           <boxGeometry args={[0.18, 0.5, 0.18]} />
-          <meshStandardMaterial color={pantsColor} roughness={0.9} />
+          <meshPhysicalMaterial color={pantsColor} roughness={0.8} />
         </mesh>
       </group>
       {/* Left Arm */}
       <group ref={leftArmRef} position={[-0.35, 1.0, 0]}>
         <mesh castShadow receiveShadow position={[0, -0.2, 0]}>
           <boxGeometry args={[0.14, 0.4, 0.14]} />
-          <meshStandardMaterial color={bodyColor} roughness={0.6} />
+          <meshPhysicalMaterial color={bodyColor} roughness={0.7} />
         </mesh>
       </group>
       {/* Right Arm */}
       <group ref={rightArmRef} position={[0.35, 1.0, 0]}>
         <mesh castShadow receiveShadow position={[0, -0.2, 0]}>
           <boxGeometry args={[0.14, 0.4, 0.14]} />
-          <meshStandardMaterial color={bodyColor} roughness={0.6} />
+          <meshPhysicalMaterial color={bodyColor} roughness={0.7} />
         </mesh>
       </group>
     </group>

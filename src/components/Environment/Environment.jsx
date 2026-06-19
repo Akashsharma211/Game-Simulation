@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { CITY_DATA } from '../../utils/cityGenerator'
 import { COLORS, MAP } from '../../utils/constants'
 import { useSettingsStore } from '../../store/gameStore'
+import { Textures } from '../../utils/TextureGenerator'
 
 const StreetLight = memo(({ light, isNight }) => (
   <group position={[light.x, 0, light.z]}>
@@ -97,7 +98,7 @@ export default function Environment() {
       {/* Ground */}
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[MAP.SIZE, MAP.SIZE]} />
-        <meshStandardMaterial color={COLORS.GRASS} roughness={1} metalness={0} />
+        <meshStandardMaterial map={Textures.grass} roughness={0.9} metalness={0} />
       </mesh>
 
       {/* Area zone markers (subtle) */}
@@ -111,15 +112,15 @@ export default function Environment() {
         <group>
           <instancedMesh ref={treeTrunkRef} args={[null, null, treesData.length]} castShadow receiveShadow>
             <cylinderGeometry args={[0.15, 0.2, 3, 6]} />
-            <meshStandardMaterial color="#5c4033" roughness={0.9} />
+            <meshPhysicalMaterial color="#5c4033" roughness={0.9} clearcoat={0.1} />
           </instancedMesh>
           <instancedMesh ref={treeCone1Ref} args={[null, null, treesData.length]} castShadow receiveShadow>
             <coneGeometry args={[1.2, 2.5, 8]} />
-            <meshStandardMaterial color="#228B22" roughness={0.8} />
+            <meshPhysicalMaterial color="#228B22" roughness={0.8} clearcoat={0.1} />
           </instancedMesh>
           <instancedMesh ref={treeCone2Ref} args={[null, null, treesData.length]} castShadow receiveShadow>
             <coneGeometry args={[0.9, 2, 8]} />
-            <meshStandardMaterial color="#2d8a2d" roughness={0.8} />
+            <meshPhysicalMaterial color="#2d8a2d" roughness={0.8} clearcoat={0.1} />
           </instancedMesh>
         </group>
       )}
@@ -138,7 +139,7 @@ export default function Environment() {
       {[[30, -10], [-30, 30]].map(([x, z], i) => (
         <mesh key={`park-${i}`} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.01, z]}>
           <planeGeometry args={[15, 10]} />
-          <meshStandardMaterial color="#4b5563" roughness={0.9} />
+          <meshStandardMaterial map={Textures.asphalt} roughness={0.9} />
         </mesh>
       ))}
 
